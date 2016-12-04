@@ -79,9 +79,9 @@ class QuaternionParameterization : public ceres::LocalParameterization
         double norm_delta = sqrt(squared_norm_delta);
         const double sin_delta_by_delta = sin(norm_delta) / norm_delta;
         q_delta[0] = cos(norm_delta);
-        q_delta[1] = sin_delta_by_delta * delta[0] / 2;
-        q_delta[2] = sin_delta_by_delta * delta[1] / 2;
-        q_delta[3] = sin_delta_by_delta * delta[2] / 2;
+        q_delta[1] = sin_delta_by_delta * delta[0];
+        q_delta[2] = sin_delta_by_delta * delta[1];
+        q_delta[3] = sin_delta_by_delta * delta[2];
       } else {
         // We do not just use q_delta = [1,0,0,0] here because that is a
         // constant and when used for automatic differentiation will
@@ -93,10 +93,10 @@ class QuaternionParameterization : public ceres::LocalParameterization
         q_delta[3] = delta[2];
       }
 
-      //ceres::QuaternionProduct(q_delta, x, x_plus_delta);
-      ceres::QuaternionProduct(x, q_delta, x_plus_delta);
+      ceres::QuaternionProduct(q_delta, x, x_plus_delta);
+      //ceres::QuaternionProduct(x, q_delta, x_plus_delta);
+      return true;
       */
-      
       //cout << " q_delta ceres " << q_delta[0] << "  " << q_delta[1] <<"  " << q_delta[2] <<"  " << q_delta[3] << endl;
 
       Eigen::Map<const Eigen::Quaterniond> _q(x);
@@ -113,16 +113,18 @@ class QuaternionParameterization : public ceres::LocalParameterization
     {
       
         //std::cout << "analy quaternion ComputeJacobian" << std::endl;
-        Eigen::Map<Eigen::Matrix<double, 4, 3, Eigen::RowMajor>> j(jacobian);
-        j.topRows<1>().setZero();
-        j.bottomRows<3>().setIdentity();
+
       
         /*
         jacobian[0] = -x[1]; jacobian[1]  = -x[2]; jacobian[2]  = -x[3];  // NOLINT
         jacobian[3] =  x[0]; jacobian[4]  =  x[3]; jacobian[5]  = -x[2];  // NOLINT
         jacobian[6] = -x[3]; jacobian[7]  =  x[0]; jacobian[8]  =  x[1];  // NOLINT
         jacobian[9] =  x[2]; jacobian[10] = -x[1]; jacobian[11] =  x[0];  // NOLINT
+        return true;
         */
+        Eigen::Map<Eigen::Matrix<double, 4, 3, Eigen::RowMajor>> j(jacobian);
+        j.topRows<1>().setZero();
+        j.bottomRows<3>().setIdentity();
         return true;
     }
     virtual int GlobalSize() const { return 4; };

@@ -61,11 +61,17 @@ void ceresMethod(const vector<cv::Point3f> &pts_3, const vector<cv::Point2f> &un
     */
     ceres::Problem problem;
 
+
+    //camera_R[0] = Q.w();
+    //camera_R[1] = Q.x();
+    //camera_R[2] = Q.y();
+    //camera_R[3] = Q.z();
     //ceres::LocalParameterization* local_parameterization =
     //    new ceres::AutoDiffLocalParameterization<QuaternionPlus, 4, 3>;
     ceres::LocalParameterization* local_parameterization = new QuaternionParameterization();
+
     problem.AddParameterBlock(camera_R, 4, local_parameterization);
-    problem.AddParameterBlock(camera_T, 3);
+    //problem.AddParameterBlock(camera_T, 3);
 
     for (int i = 0; i < pts_3.size(); i++)
     {
@@ -455,6 +461,25 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
     double t = clock();
     cv_bridge::CvImagePtr bridge_ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
+    cv::Mat color_draw;
+    color_draw = bridge_ptr->image.clone();
+    cv::cvtColor(color_draw, color_draw, cv::COLOR_GRAY2RGB);
+
+    /*
+    int cols = bridge_ptr->image.cols;
+    int rows = bridge_ptr->image.rows;
+
+    for (int i = 0; i < cols / 4; i++)
+    {
+        for (int j = 0; j < rows; j++)
+            bridge_ptr->image.at<uchar>(j,i) = 255;
+    }
+    for (int i = cols - 1; i > 3 * cols / 4; i--)
+    {
+        for (int j = 0; j < rows; j++)
+            bridge_ptr->image.at<uchar>(j,i) = 255;
+    }
+    */
     MDetector.detect(bridge_ptr->image, Markers);
     float probDetect = TheBoardDetector.detect(Markers, TheBoardConfig, TheBoardDetected, CamParam, MarkerSize);
     //ROS_INFO("p: %f, time cost: %f\n", probDetect, (clock() - t) / CLOCKS_PER_SEC);
@@ -468,11 +493,15 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 
         char str[100];
         sprintf(str, "%d", idx);
-        cv::putText(bridge_ptr->image, str, Markers[i].getCenter(), CV_FONT_HERSHEY_COMPLEX, 0.4, cv::Scalar(-1));
+        cv::putText(bridge_ptr->image, str, Markers[i].getCenter(), CV_FONT_HERSHEY_COMPLEX, 1, cv::Scalar(255));
+        cv::putText(color_draw, str, Markers[i].getCenter(), CV_FONT_HERSHEY_COMPLEX, 0.8, cv::Scalar(0, 0, 255), 2);
+        //cv::circle(color_draw, Markers[i].getCenter(), 4, cv::Scalar(0, 0 , 255), -1);
+
         for (unsigned int j = 0; j < 4; j++)
         {
             sprintf(str, "%d", j);
             cv::putText(bridge_ptr->image, str, Markers[i][j], CV_FONT_HERSHEY_COMPLEX, 0.4, cv::Scalar(-1));
+            cv::circle(color_draw, Markers[i][j], 4, cv::Scalar(0, 0 , 255), -1);
         }
 
         for (unsigned int j = 0; j < 4; j++)
@@ -482,7 +511,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             pts_2.push_back(Markers[i][j]);
         }
     }
-
+    cv::imshow("color", color_draw);
     //begin your function
     if (pts_id.size() > 5)
         process(pts_id, pts_3, pts_2, img_msg->header.stamp);

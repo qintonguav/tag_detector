@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     cv_bridge 
     )
-
+message(${catkin_INCLUDE_DIRS})
 find_package(OpenCV REQUIRED)
 
 find_package(Ceres 1.11.0 REQUIRED)
@@ -22,7 +22,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
-
+message( "fuck!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+message(${catkin_INCLUDE_DIRS})
 set(CMAKE_MODULE_PATH /usr/local/lib/cmake/)
 find_package(aruco REQUIRED)
 
