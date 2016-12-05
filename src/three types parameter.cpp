@@ -90,8 +90,9 @@ camera_R[3] = Q.z();
              camera_R[3] = Q.z();
         ceres::LocalParameterization* local_parameterization = new QuaternionParameterization();
 
-        ceres::CostFunction* cost_function  = 
-            new ReprojectionCostFunction(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z);  
+        ceres::CostFunction* cost_function =
+            new ceres::AutoDiffCostFunction<ReprojectionError, 2, 4, 3>
+                (new ReprojectionError(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z)); 
 
             struct ReprojectionError
             {
