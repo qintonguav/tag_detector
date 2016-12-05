@@ -13,6 +13,7 @@
 #include <opencv2/core/eigen.hpp>
 
 #include "ReprojectionError.h"
+#include "ceres_extensions.h"
 #include "tic_toc.h"
 using namespace cv;
 using namespace aruco;
@@ -42,10 +43,10 @@ void ceresMethod(const vector<cv::Point3f> &pts_3, const vector<cv::Point2f> &un
     // x y z w
     
     double camera_R[4];
-    camera_R[0] = Q.x();
-    camera_R[1] = Q.y();
-    camera_R[2] = Q.z();
-    camera_R[3] = Q.w();
+    //camera_R[0] = Q.x();
+    //camera_R[1] = Q.y();
+    //camera_R[2] = Q.z();
+    //camera_R[3] = Q.w();
 
     double* camera_T;
     camera_T = T.data();
@@ -62,13 +63,14 @@ void ceresMethod(const vector<cv::Point3f> &pts_3, const vector<cv::Point2f> &un
     ceres::Problem problem;
 
 
-    //camera_R[0] = Q.w();
-    //camera_R[1] = Q.x();
-    //camera_R[2] = Q.y();
-    //camera_R[3] = Q.z();
+    camera_R[0] = Q.w();
+    camera_R[1] = Q.x();
+    camera_R[2] = Q.y();
+    camera_R[3] = Q.z();
     //ceres::LocalParameterization* local_parameterization =
     //    new ceres::AutoDiffLocalParameterization<QuaternionPlus, 4, 3>;
-    ceres::LocalParameterization* local_parameterization = new QuaternionParameterization();
+    //ceres::LocalParameterization* local_parameterization = new QuaternionParameterization();
+    ceres::LocalParameterization* local_parameterization = new ceres_ext::EigenQuaternionParameterization();
 
     problem.AddParameterBlock(camera_R, 4, local_parameterization);
     //problem.AddParameterBlock(camera_T, 3);
@@ -76,13 +78,13 @@ void ceresMethod(const vector<cv::Point3f> &pts_3, const vector<cv::Point2f> &un
     for (int i = 0; i < pts_3.size(); i++)
     {
         
-        //ceres::CostFunction* cost_function =
-        //    new ceres::AutoDiffCostFunction<ReprojectionError, 2, 4, 3>
-        //        (new ReprojectionError(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z));
+        ceres::CostFunction* cost_function =
+            new ceres::AutoDiffCostFunction<ReprojectionError, 2, 4, 3>
+                (new ReprojectionError(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z));
         
         
-        ceres::CostFunction* cost_function  = 
-            new ReprojectionCostFunction(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z);
+        //ceres::CostFunction* cost_function  = 
+        //    new ReprojectionCostFunction(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z);
         
 
         problem.AddResidualBlock(cost_function, NULL, camera_R, camera_T);

@@ -273,3 +273,53 @@ ceres::CostFunction* cost_function  =
         virtual int LocalSize() const { return 3; };
     };
 
+//third manual(ceres_extensions.h) + AD
+
+    camera_R[0] = Q.w();
+    camera_R[1] = Q.x();
+    camera_R[2] = Q.y();
+    camera_R[3] = Q.z();
+
+
+    ceres::LocalParameterization* local_parameterization = new ceres_ext::EigenQuaternionParameterization();
+
+    ceres::CostFunction* cost_function =
+        new ceres::AutoDiffCostFunction<ReprojectionError, 2, 4, 3>
+            (new ReprojectionError(un_pts_2[i].x, un_pts_2[i].y, pts_3[i].x, pts_3[i].y, pts_3[i].z));
+
+
+            struct ReprojectionError
+            {
+                ReprojectionError(double observed_u, double observed_v, double Point_x, double Point_y, double Point_z)
+                    :observed_u(observed_u), observed_v(observed_v), Point_x(Point_x), Point_y(Point_y), Point_z(Point_z)
+                    {}
+
+                template <typename T>
+                bool operator()(const T* const camera_R, const T* const camera_T, T* residuals) const
+                {
+                    T p[3];
+                    T point[3];
+                    point[0] = T(Point_x);
+                    point[1] = T(Point_y);
+                    point[2] = T(Point_z);
+                    ceres::QuaternionRotatePoint(camera_R, point, p);
+                    p[0] += camera_T[0]; p[1] += camera_T[1]; p[2] += camera_T[2];
+                    T xp = p[0] / p[2];
+                T yp = p[1] / p[2];
+                residuals[0] = xp - T(observed_u);
+                residuals[1] = yp - T(observed_v);
+                return true;
+                }
+
+                double observed_u;
+                double observed_v;
+                double Point_x;
+                double Point_y;
+                double Point_z;
+                /*
+                static ceres::CostFunction* Create(const double observed_u, const double observed_v, const double* Point){
+                    return (new ceres::AutoDiffCostFunction<ReprojectionError, 2, 4, 3>(
+                        new ReprojectionError(observed_u, observed_v, Point)));
+                };
+                */
+            };
